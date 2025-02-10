@@ -1,97 +1,132 @@
-# Blockchain_Simulation
-This is a simple blockchain simulation implemented in Java. It mimics the core functionality of a blockchain.
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Date;
 
-# Blockchain Simulation in Java
+// Class representing a Block in the Blockchain
+class Block {
+    public int index; // Block number
+    public long timestamp; // Timestamp of block creation
+    public String transactions; // Transactions stored in the block
+    public String previousHash; // Hash of the previous block
+    public String hash; // Hash of the current block
+    public int nonce; // Used for proof-of-work
 
-## 📌 Project Overview
+    // Constructor to create a new block
+    public Block(int index, String transactions, String previousHash) {
+        this.index = index;
+        this.timestamp = new Date().getTime();
+        this.transactions = transactions;
+        this.previousHash = previousHash;
+        this.nonce = 0;
+        this.hash = computeHash(); // Generate hash for the block
+    }
 
-This is a simple blockchain simulation implemented in Java. It mimics the core functionality of a blockchain, including:
+    // Method to compute the hash of the block
+    public String computeHash() {
+        String data = index + timestamp + transactions + previousHash + nonce;
+        return applySHA256(data);
+    }
 
-- Creating blocks with transactions
-- Hashing blocks using SHA-256
-- Proof-of-Work (mining) mechanism
-- Chain validation to detect tampering
+    // Proof-of-work mechanism (mining)
+    public void mineBlock(int difficulty) {
+        String target = new String(new char[difficulty]).replace('\0', '0');
+        while (!hash.substring(0, difficulty).equals(target)) {
+            nonce++;
+            hash = computeHash();
+        }
+        System.out.println("Block Mined: " + hash);
+    }
 
-## 📂 Project Structure
+    // Static method to apply SHA-256 hashing algorithm
+    public static String applySHA256(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes("UTF-8"));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
 
-```
-/BlockchainSimulation
- ├── src
- │   ├── Block.java
- │   ├── Blockchain.java
- │   ├── BlockchainSimulation.java
- ├── README.md
- ├── .gitignore
- ├── pom.xml (if using Maven)
-```
+// Class representing the Blockchain
+class Blockchain {
+    private ArrayList<Block> chain; // List of blocks forming the chain
+    private int difficulty; // Mining difficulty level
 
-## 🚀 Features
+    // Constructor to initialize the blockchain
+    public Blockchain(int difficulty) {
+        this.chain = new ArrayList<>();
+        this.difficulty = difficulty;
+        chain.add(createGenesisBlock()); // Adding the first block
+    }
 
-- Block structure with an index, timestamp, transactions, previous hash, current hash, and nonce
-- SHA-256 hashing for security
-- Proof-of-Work with adjustable difficulty
-- Blockchain integrity validation
-- Blockchain printing and transaction logging
+    // Method to create the Genesis Block (First Block in the chain)
+    private Block createGenesisBlock() {
+        return new Block(0, "Genesis Block", "0");
+    }
 
-## 🛠️ Requirements
+    // Method to get the latest block in the chain
+    public Block getLatestBlock() {
+        return chain.get(chain.size() - 1);
+    }
 
-- Java JDK 8 or later
-- IDE like IntelliJ IDEA, Eclipse, or VS Code
+    // Method to add a new block to the chain
+    public void addBlock(String transactions) {
+        Block newBlock = new Block(chain.size(), transactions, getLatestBlock().hash);
+        newBlock.mineBlock(difficulty); // Mining the block before adding
+        chain.add(newBlock);
+    }
 
-## 🏗️ Setup & Execution
+    // Method to validate the blockchain integrity
+    public boolean isChainValid() {
+        for (int i = 1; i < chain.size(); i++) {
+            Block currentBlock = chain.get(i);
+            Block previousBlock = chain.get(i - 1);
 
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/your-username/BlockchainSimulation.git
-   cd BlockchainSimulation
-   ```
-2. **Compile the Java files:**
-   ```sh
-   javac src/*.java
-   ```
-3. **Run the simulation:**
-   ```sh
-   java src.BlockchainSimulation
-   ```
+            // Check if the stored hash is valid
+            if (!currentBlock.hash.equals(currentBlock.computeHash())) {
+                return false;
+            }
+            // Check if the previous hash matches
+            if (!currentBlock.previousHash.equals(previousBlock.hash)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-## 📜 Sample Output
+    // Method to print the blockchain details
+    public void printBlockchain() {
+        for (Block block : chain) {
+            System.out.println("Index: " + block.index);
+            System.out.println("Timestamp: " + block.timestamp);
+            System.out.println("Transactions: " + block.transactions);
+            System.out.println("Previous Hash: " + block.previousHash);
+            System.out.println("Hash: " + block.hash);
+            System.out.println("Nonce: " + block.nonce);
+            System.out.println("--------------------------------------");
+        }
+    }
+}
 
-```
-Block Mined: 0000a1b2c3d4...
-Index: 1
-Timestamp: 1700000000000
-Transactions: Alice pays Bob 10 BTC
-Previous Hash: 0000x9y8z7w...
-Hash: 0000a1b2c3d4...
-Nonce: 45231
-...
-Blockchain is valid: true
-```
+// Main class to run the blockchain simulation
+public class Assginment_project  {
+    public static void main(String[] args) {
+        Blockchain blockchain = new Blockchain(4); // Set mining difficulty level
+        blockchain.addBlock("Alice pays Bob 10 BTC"); // Adding first transaction block
+        blockchain.addBlock("Bob pays Charlie 5 BTC"); // Adding second transaction block
 
-## 🛡️ Validating Blockchain Integrity
+        blockchain.printBlockchain(); // Print the blockchain details
 
-The system checks if the hashes are correctly linked. If a block is tampered with, the validation will fail:
-
-```
-Blockchain is valid: false
-```
-
-## 🏗️ Future Enhancements
-
-- Dynamic transaction addition
-- Peer-to-peer communication
-- Implementing a Merkle tree for transaction verification
-
-## 🤝 Contributing
-
-Feel free to fork the project, make improvements, and submit a pull request!
-
-## 📜 License
-
-This project is open-source.
-
----
-
-💡 **Created with Java & Passion for Blockchain Development!** 🚀
-
+        // Validate the blockchain integrity
+        System.out.println("Blockchain is valid: " + blockchain.isChainValid());
+    }
+}
 
