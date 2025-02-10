@@ -79,5 +79,5 @@ Blockchain is valid: true
 This project is open-source and available for learning purposes.
 
 ## Author
-**Your Name** - Java Blockchain Enthusiast
+**Your Name** - Manoj Verma
 
